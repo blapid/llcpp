@@ -19,13 +19,13 @@ namespace llcpp::detail::log_line {
         template<typename _Config>
         using log_line_with_config = log_line<_Config, CharT, Chars...>;
 
-        inline constexpr std::size_t size() const {
+        constexpr std::size_t size() const {
             return string_format::size();
         }
-        inline static constexpr std::size_t fmt_size() {
+        static constexpr std::size_t fmt_size() {
             return string_format::fmt_size();
         }
-        inline static constexpr std::size_t args_size() {
+        static constexpr std::size_t args_size() {
             return string_format::args_size();
         }
 
@@ -43,7 +43,7 @@ namespace llcpp::detail::log_line {
         using num_variable_args = format_parser::count_variable_arguments<argument_tuple>;
 
         template<typename Logger, typename ArgTuple, std::size_t Idx, typename Arg = typename std::tuple_element<Idx, ArgTuple>::type>
-        inline void apply_arg(Logger& logger, const Arg arg) {
+        void apply_arg(Logger& logger, const Arg arg) {
             using argument_parser = typename std::tuple_element_t<Idx, argument_tuple>;
             using _expected_arg_type_from_format = typename argument_parser::argument_type;
             //Add const to allow const arguments to be passed
@@ -67,11 +67,11 @@ namespace llcpp::detail::log_line {
         };
 
         template<typename Logger, typename ArgTuple, std::size_t Idx, typename Arg = typename std::tuple_element<Idx, ArgTuple>::type>
-        inline void apply_arg_variable(Logger& logger, const Arg arg) {
+        void apply_arg_variable(Logger& logger, const Arg arg) {
             //No-Op for anything other than strings...
         }
         template<typename Logger, typename ArgTuple, std::size_t Idx, typename Arg = typename std::tuple_element<Idx, ArgTuple>::type>
-        inline void apply_arg_variable(Logger& logger, const char * arg) {
+        void apply_arg_variable(Logger& logger, const char * arg) {
             using argument_parser = typename std::tuple_element_t<Idx, argument_tuple>;
 
             if constexpr(!argument_parser::is_fixed_size) {
@@ -79,14 +79,14 @@ namespace llcpp::detail::log_line {
             }
         };
         template<typename Logger, typename ArgTuple, std::size_t... I>
-        inline void _apply_args(Logger& logger, ArgTuple args, std::index_sequence<I...>) {
+        void _apply_args(Logger& logger, ArgTuple args, std::index_sequence<I...>) {
             (apply_arg<Logger, ArgTuple, I>(logger, std::get<I>(args)), ...);
             if constexpr(num_variable_args::value > 0) {
                 (apply_arg_variable<Logger, ArgTuple, I>(logger, std::get<I>(args)), ...);
             }
         }
         template<typename Logger, typename... Args>
-        inline void apply_args(Logger& logger, std::tuple<Args...> args) {
+        void apply_args(Logger& logger, std::tuple<Args...> args) {
             _apply_args(logger, std::move(args), std::index_sequence_for<Args...>{});
         }
     };

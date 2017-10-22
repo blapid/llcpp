@@ -12,12 +12,12 @@ namespace llcpp::detail::prefix {
         virtual ~prefix_base() {}
 
         template<typename Logger>
-        inline void apply(logging::level::level_enum level, Logger& logger) {}
+        void apply(logging::level::level_enum level, Logger& logger) {}
     };
 
     template<bool UseLocalTime = true>
     struct time_format_prefix : public prefix_base {
-        inline std::tm localtime()
+        std::tm localtime()
         {
             //TODO check errors
             std::time_t now_t = std::time(nullptr);
@@ -32,7 +32,7 @@ namespace llcpp::detail::prefix {
         }
 
         template<typename Logger>
-        inline void apply(typename logging::level::level_enum level, Logger& logger) {
+        void apply(typename logging::level::level_enum level, Logger& logger) {
             auto lt = localtime();
             "[%d-%3s-%d %d:%d:%d]: "_log(logger, lt.tm_year + 1900, m_month_strings[lt.tm_mon], lt.tm_mday, lt.tm_hour, lt.tm_min, lt.tm_sec);
         }
@@ -44,7 +44,7 @@ namespace llcpp::detail::prefix {
     };
     struct nanosec_time_prefix : public prefix_base {
         template<typename Logger>
-        inline void apply(typename logging::level::level_enum level, Logger& logger) {
+        void apply(typename logging::level::level_enum level, Logger& logger) {
             auto now = std::chrono::system_clock::now();
             auto now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
             "[%llu]: "_log(logger, now_ns);
@@ -53,7 +53,7 @@ namespace llcpp::detail::prefix {
     struct log_level_prefix : public prefix_base {
 
         template<typename Logger>        
-        inline void apply(typename logging::level::level_enum level, Logger& logger) {
+        void apply(typename logging::level::level_enum level, Logger& logger) {
             "[%8s]"_log(logger, m_level_strings[level]);
         }
 

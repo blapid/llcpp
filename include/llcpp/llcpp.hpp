@@ -17,6 +17,9 @@ namespace llcpp {
     using vector_logger = detail::logging::vector_logger<PrefixTuple, Config>;
 
     using prefix_base = detail::prefix::prefix_base;
+
+    using gmtime_prefix = detail::prefix::time_format_prefix<false>;
+    using localtime_prefix = detail::prefix::time_format_prefix<>;
     template<bool UseLocalTime = true>
     using time_format_prefix = detail::prefix::time_format_prefix<UseLocalTime>;
     using log_level_prefix = detail::prefix::log_level_prefix;

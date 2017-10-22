@@ -23,44 +23,44 @@ namespace llcpp::detail::logging {
         static_assert(utils::is_specialization_of<PrefixTuple, std::tuple>::value, "PrefixTuple must be a tuple");
         using config_t = Config;
 
-        logger_base(PrefixTuple&& prefix_tuple) : m_prefix_tuple(std::forward<PrefixTuple>(prefix_tuple)) {}
+        logger_base(PrefixTuple&& prefix_tuple = {}) : m_prefix_tuple(std::forward<PrefixTuple>(prefix_tuple)) {}
         virtual ~logger_base() {}
 
         template<typename LogLine, typename... Args>
-        inline void trace(LogLine&& line, Args&&... args) {
+        void trace(LogLine&& line, Args&&... args) {
             log(level::trace, std::forward<LogLine>(line), std::forward<Args>(args)...);
         }
         template<typename LogLine, typename... Args>
-        inline void debug(LogLine&& line, Args&&... args) {
+        void debug(LogLine&& line, Args&&... args) {
             log(level::debug, std::forward<LogLine>(line), std::forward<Args>(args)...);
         }
         template<typename LogLine, typename... Args>
-        inline void info(LogLine&& line, Args&&... args) {
+        void info(LogLine&& line, Args&&... args) {
             log(level::info, std::forward<LogLine>(line), std::forward<Args>(args)...);
         }
         template<typename LogLine, typename... Args>
-        inline void warn(LogLine&& line, Args&&... args) {
+        void warn(LogLine&& line, Args&&... args) {
             log(level::warn, std::forward<LogLine>(line), std::forward<Args>(args)...);
         }
         template<typename LogLine, typename... Args>
-        inline void err(LogLine&& line, Args&&... args) {
+        void err(LogLine&& line, Args&&... args) {
             log(level::err, std::forward<LogLine>(line), std::forward<Args>(args)...);
         }
         template<typename LogLine, typename... Args>
-        inline void critical(LogLine&& line, Args&&... args) {
+        void critical(LogLine&& line, Args&&... args) {
             log(level::critical, std::forward<LogLine>(line), std::forward<Args>(args)...);
         }
 
-        inline void write(const std::uint8_t *data, const std::size_t len) {
+        void write(const std::uint8_t *data, const std::size_t len) {
             static_cast<Derived*>(this)->write_impl(data,len);
         }
-        inline void line_hint() {
+        void line_hint() {
             static_cast<Derived*>(this)->line_hint_impl();
         }
 
     protected:
         template<std::size_t... I>
-        inline void apply_prefix_tuples(typename level::level_enum level, std::index_sequence<I...>) {
+        void apply_prefix_tuples(typename level::level_enum level, std::index_sequence<I...>) {
             (std::get<I>(m_prefix_tuple).apply(level, *this), ...);
         }
 
@@ -75,9 +75,9 @@ namespace llcpp::detail::logging {
         }
 
         //Override these two functions in your derived logger
-        inline void write_impl(const std::uint8_t *data, const std::size_t len) {
+        void write_impl(const std::uint8_t *data, const std::size_t len) {
         }
-        inline void line_hint_impl() {
+        void line_hint_impl() {
         }
 
         PrefixTuple m_prefix_tuple;
@@ -87,12 +87,12 @@ namespace llcpp::detail::logging {
     struct file_logger : public detail::logging::logger_base<PrefixTuple, file_logger<PrefixTuple, Config>, Config> {
         friend class detail::logging::logger_base<PrefixTuple, file_logger<PrefixTuple, Config>, Config>;
 
-        file_logger(std::string_view path, PrefixTuple&& prefix_tuple) : m_fp(std::fopen(path.data(), "w"), std::fclose),
+        file_logger(std::string_view path, PrefixTuple&& prefix_tuple = {}) : m_fp(std::fopen(path.data(), "w"), std::fclose),
             logger_base<PrefixTuple, file_logger<PrefixTuple, Config>, Config>(std::forward<PrefixTuple>(prefix_tuple))
         {
             //TODO: Check errors etc...
         }
-        file_logger(std::FILE *fp, PrefixTuple&& prefix_tuple) : m_fp(fp, {}),
+        file_logger(std::FILE *fp, PrefixTuple&& prefix_tuple = {}) : m_fp(fp, {}),
             logger_base<PrefixTuple, file_logger<PrefixTuple>>(std::forward<PrefixTuple>(prefix_tuple))
         {
             //TODO: Check errors etc...
@@ -101,14 +101,14 @@ namespace llcpp::detail::logging {
             line_hint_impl(true);
         }
 
-        inline void line_hint_impl(bool force_flush = false) {
+        void line_hint_impl(bool force_flush = false) {
             if (force_flush) {
                 std::fwrite(m_cache, m_cache_count, 1, m_fp.get());
                 m_cache_count = 0;
             }
         }
     protected:
-        inline void write_impl(const std::uint8_t *data, const std::size_t len) { 
+        void write_impl(const std::uint8_t *data, const std::size_t len) { 
             if (len > sizeof(m_cache)) {
                 // Flush current cache
                 line_hint_impl(true);
@@ -138,7 +138,7 @@ namespace llcpp::detail::logging {
     //XXX: Hack...
     template<typename PrefixTuple, typename Config = config::default_config>
     struct stdout_logger : public file_logger<PrefixTuple, Config> {
-        stdout_logger(PrefixTuple&& prefix_tuple) : 
+        stdout_logger(PrefixTuple&& prefix_tuple = {}) : 
             file_logger<PrefixTuple>(stdout, std::forward<PrefixTuple>(prefix_tuple))
         {
         }
@@ -147,15 +147,15 @@ namespace llcpp::detail::logging {
     template<typename PrefixTuple, typename Config = config::default_config>
     struct vector_logger : public logger_base<PrefixTuple, vector_logger<PrefixTuple>, Config> {
 
-        vector_logger(std::vector<std::uint8_t>& vec, PrefixTuple&& prefix_tuple) : m_vec(vec),
+        vector_logger(std::vector<std::uint8_t>& vec, PrefixTuple&& prefix_tuple = {}) : m_vec(vec),
             logger_base<PrefixTuple, vector_logger<PrefixTuple>>(std::forward<PrefixTuple>(prefix_tuple))
         {
         }
 
-        inline void line_hint_impl() {
+        void line_hint_impl() {
         }
 
-        inline void write_impl(const std::uint8_t *data, const std::size_t len) {    
+        void write_impl(const std::uint8_t *data, const std::size_t len) {    
             m_vec.insert(m_vec.end(), data, data+len);
         }
 

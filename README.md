@@ -36,12 +36,12 @@ Also, I'll appreciate any feedback you may have :)
 ## Not Textual?!
 Yeah! Outputting textual logs is one of those "hidden" constrainsts/assumptions that no one talks about. If you think about it, you hardly ever read your logs directly. They're usually pulled and aggregated from your servers and go through a whole pipeline, adding a parser is no big deal. 
 
-Once you free yourself from this constraint, it's possible to implement a logging framework thats even faster than the current state of the art. How much faster you ask?
+Once you free yourself from this constraint, it's possible to implement a logging framework thats even faster than the current state of the art. How much faster you ask? See the [benchmarks](#benchmarks).
 
 ## Benchmarks
 Make sure you read [my post]() on benchmarking logging frameworks to get the whole story.
 
-The following benchmark were run on Ubuntu. Compiled with Clang 5.0.1 with `--std=c++1z -flto -O3` flags. `/tmp` is mounted on an SSD. llcpp is presented with both timestamp prefix and date/time prefix (which is slower due to `localtime()`).
+The following benchmark were run on Ubuntu 16.04.03. Compiled with Clang 5.0.1 with `--std=c++1z -flto -O3` flags. `/tmp` is mounted on an SSD. llcpp is presented with both timestamp prefix and date/time prefix (which is slower due to `localtime()`).
 
 #### 1 Thread Logging To `/tmp` 
 
@@ -65,19 +65,22 @@ The following benchmark were run on Ubuntu. Compiled with Clang 5.0.1 with `--st
 |spdlog |      1100|     1193|     1238|     1373|    14022|  1312104|1032.874598| 1.91 |
 |g3log |      1904|     2452|     3171|     9600|    37283|  6174296|2428.927793| 16.29 |
 
+#### Worst case measurements
+See my blog post for some discussion over worst-case measurements.
+
 ## Example
 ```c++
 int main(int argc, char* argv[])
 {
-    using conf_t = llcpp::default_config
-    using prefix_tuple_t = std::tuple<llcpp::log_level_prefix, llcpp::time_format_prefix<>>;
+    using conf_t = llcpp::default_config;
+    using prefix_tuple_t = std::tuple<llcpp::log_level_prefix, llcpp::localtime_prefix;
     using logger_t = llcpp::file_logger<prefix_tuple_t, conf_t>;
     auto logger = logger_t("./log.txt", {});
     
     logger.info("llcpp message #%d : This is some text for your pleasure. %s"_log, 0, "/dev/null");
     logger.info("llcpp message #%d : This is some text for your pleasure. %d %p"_log, 1, 42, 50);
     logger.info("llcpp message #%d : This is some text for your pleasure. %d %s %ld %llx. end."_log, 2, 42, "asdf", 24, 50);
-        return 0;
+    return 0;
 }
 ```
 
@@ -85,29 +88,29 @@ int main(int argc, char* argv[])
 The binary format is pretty straightforward: write the null-terminated format string, then write the in-memory binary representation of each of the arguments. For arithmetic types (ints, floats, etc.), the size of each binary representation is derived from the format string (`%d` will be 4 bytes, `%lld` will be 8 bytes, etc.). For strings, we have two options: writing the length and then the string or passing information about the maximum length in the format string and then copying the minimum between the given maximum and the string's actual length.
 
 Examples:
-- `LOG("Hello world\n")` - would simply be written as the null terminated string, as you'd expect.
-- `LOG("Hello world %d\n", 42)` - would write the null terminated string, followed by 4 bytes representing `42` (little endian).
-- `LOG("Hello world %lld\n", 42)` - would write the null terminated string, followed by 8 bytes representing `42` (little endian).
-- `LOG("Hello world %s\n", "42")` - would write the null terminated string, followed by 4 bytes representing `2` (the length of `"42"`) and 2 bytes with the actual string `"42"`
-- `LOG("Hello world %8s\n", "42")` - would write the null terminated string, followed by 8 bytes, of which the first two would hold the string `"42"`. If the string given in the argument is bigger, it would be truncated.
+- `logger.info("Hello world"_log)` - would simply be written as the null terminated string, as you'd expect.
+- `logger.info("Hello world %d"_log, 42)` - would write the null terminated string, followed by 4 bytes representing `42` (little endian).
+- `logger.info("Hello world %lld"_log, 42)` - would write the null terminated string, followed by 8 bytes representing `42` (little endian).
+- `logger.info("Hello world %s"_log, "42")` - would write the null terminated string, followed by 4 bytes representing `2` (the length of `"42"`) and 2 bytes with the actual string `"42"`
+- `logger.info("Hello world %8s"_log, "42")` - would write the null terminated string, followed by 8 bytes, of which the first two would hold the string `"42"`. If the string given in the argument is bigger, it would be truncated.
 
 ## Design Overview
-- User defined string literals are used to capture log format into variadic template parameters
--  `string_format` - Is specialized holds a static array of characters representing the format string
-- `format_parser` - Parses the format string in compile time, generating a tuple of `argument_parser`'s which correspond to the deduced arguments from the format
+- User defined string literals are used to capture log format into variadic template parameters.
+-  `string_format` - Is specialized and holds a static array of characters representing the format string.
+- `format_parser` - Parses the format string in compile time, generating a tuple of `argument_parser`'s which correspond to the deduced arguments from the format.
 - `terminators` - Are a collection of types that correspond to printf format type identifiers (such as `'d'`, `'s'`, `'u'`, etc.). These are used by the `format_parser` to deduce the types of the escape sequences in the format string. These also provide a specific `argument_parser` which will be aggregated by the `format_parser`.
 - `log_line` - Uses the `string_format` and `format_parser` to serialize the arguments to the log file. Exposes a `operator()` function which takes variadic arguments which are validated with the `argument_parser`'s tuple provided by the `format_parser`.
-- `logging` - Provide an interface for writing log parts to an output sink (file, network, etc.). Also handle `prefix`'es - a way to add structured data to your log lines (log level indication, timestamp, etc.).
+- `logging` - Provide an interface for writing log parts to an output sink (file, network, etc.). Also handle `prefix`'es - a way to add structured data to your log lines (log level indication, timestamp, etc.). Also provide the high level (`info()`, `warn()`, etc.) functions.
 - `config` - Allows the user to override internal classes such as `string_format`, `format_parser` and built-in `terminator` list for easy customization.
 
 ## Extending
 
 ### Adding loggers:
 - Loggers *must* use the [CRTP](https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern) and inherit from `logger_base`.
-- Loggers *must* implement the following functions
-    - `inline void line_hint_impl()` - Called by `logger_base` when an entire log line was written.
-    - `inline void write_impl(const std::uint8_t *data, const std::size_t len)` - Called by the serialization code for each log line part.
-- Loggers *should* let the user pass a PrefixTuple and Config by template parameters.
+- Loggers *must* implement the following functions:
+    - `void line_hint_impl()` - Called by `logger_base` when an entire log line was written.
+    - `void write_impl(const std::uint8_t *data, const std::size_t len)` - Called by the serialization code for each log line part.
+- Loggers *should* let the user pass a PrefixTuple and Config by template parameters, and pass it to `logger_base`.
 
 Example:
 
@@ -120,10 +123,10 @@ struct vector_logger : public logger_base<PrefixTuple, vector_logger<PrefixTuple
     {
     }
 
-    inline void line_hint_impl() {
+    void line_hint_impl() {
     }
 
-    inline void write_impl(const std::uint8_t *data, const std::size_t len) {    
+    void write_impl(const std::uint8_t *data, const std::size_t len) {    
         m_vec.insert(m_vec.end(), data, data+len);
     }
 
@@ -140,8 +143,8 @@ private:
     - `static constexpr std::size_t argument_size` - The size used when serializing this argument
     - `using argument_type` - The C++ type that this `argument_parser` expect to receive from the caller when serializing.
     - `static constexpr bool is_fixed_size` - False if this `argument_parser` cannot know in compile-time the size that will be needed during serialization.
-    - `template <typename Logger, typename Arg> inline static void apply(Logger& logger, const Arg arg)` - The serialization function. It *should* use `logger.write()` to write the serialized data.
-    - `template <typename Logger> inline static void apply_variable(Logger& logger, const char *arg)` - An auxiliary function that will be called if `is_fixed_size` is false. It *should* be used to write auxiliary serialization data if necessary.
+    - `template <typename Logger, typename Arg> static void apply(Logger& logger, const Arg arg)` - The serialization function. It *should* use `logger.write()` to write the serialized data.
+    - `template <typename Logger> static void apply_variable(Logger& logger, const char *arg)` - An auxiliary function that will be called if `is_fixed_size` is false. It *should* be used to write auxiliary serialization data if necessary.
      
 - Terminators *should* be declared in the `llcpp::user_terminators` namespace.
 
@@ -166,7 +169,7 @@ struct d : public terminator<char, 'd'>
                 long long>::type>::type;
 
         template <typename Logger, typename Arg>
-        inline static void apply(Logger& logger, const Arg arg)
+        static void apply(Logger& logger, const Arg arg)
         {
             static_assert(std::is_integral<Arg>::value,
                         "Integral argument's apply function called with non-integral value");
@@ -177,22 +180,22 @@ struct d : public terminator<char, 'd'>
         }
 
         template <typename Logger>
-        inline static void apply_variable(Logger& logger, const char *arg) {}
+        static void apply_variable(Logger& logger, const char *arg) {}
     };
 };
 }
 ```
 
 ### Adding prefixes
-- Prefixes *must* declare `template<typename Logger>
-        inline void apply(logging::level::level_enum level, Logger& logger)`. This function should use the given logger to write the prefix as needed.
+- Prefixes *must* implement `template<typename Logger>
+        void apply(logging::level::level_enum level, Logger& logger)`. This function should use the given logger to write the prefix as needed.
 
 Example:
   
 ```c++
 struct nanosec_time_prefix : public prefix_base {
     template<typename Logger>
-    inline void apply(typename logging::level::level_enum level, Logger& logger) {
+    void apply(typename logging::level::level_enum level, Logger& logger) {
         auto now = std::chrono::system_clock::now();
         auto now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
         "[%llu]: "_log(logger, now_ns);

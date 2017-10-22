@@ -18,9 +18,9 @@ namespace llcpp::detail::terminators
             static constexpr bool is_fixed_size = true;
 
             template <typename Logger, typename Arg>
-            inline static void apply(Logger& logger, const Arg arg) {}
+            static void apply(Logger& logger, const Arg arg) {}
             template <typename Logger>
-            inline static void apply_variable(Logger& logger, const char *arg) {}
+            static void apply_variable(Logger& logger, const char *arg) {}
         };
 
         using empty_parser = argument_parser<typename std::tuple<>, 0, 0>;
@@ -71,7 +71,7 @@ namespace llcpp::detail::terminators
                     long long>::type>::type;
 
             template <typename Logger, typename Arg>
-            inline static void apply(Logger& logger, const Arg arg)
+            static void apply(Logger& logger, const Arg arg)
             {
                 static_assert(std::is_integral<Arg>::value,
                             "Integral argument's apply function called with non-integral value");
@@ -82,7 +82,7 @@ namespace llcpp::detail::terminators
             }
 
             template <typename Logger>
-            inline static void apply_variable(Logger& logger, const char *arg) {}
+            static void apply_variable(Logger& logger, const char *arg) {}
         };
     };
     struct u : public terminator<char, 'u'>
@@ -143,7 +143,7 @@ namespace llcpp::detail::terminators
                 char *>::type;
 
             template <typename Logger>
-            inline static void apply(Logger& logger, const char *arg)
+            static void apply(Logger& logger, const char *arg)
             {
                 if
                     constexpr(is_fixed_size)
@@ -176,7 +176,7 @@ namespace llcpp::detail::terminators
             }
 
             template <typename Logger>
-            inline static void apply_variable(Logger& logger, const char *arg)
+            static void apply_variable(Logger& logger, const char *arg)
             {
                 if
                     constexpr(!is_fixed_size)
