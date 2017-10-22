@@ -4,7 +4,7 @@
 
 namespace llcpp::detail::terminators
 {
-    template <typename CharT, CharT Char, typename ArgumentType>
+    template <typename CharT, CharT Char, typename ArgumentType = void>
     struct terminator
     {
         using char_type = CharT;
@@ -16,19 +16,24 @@ namespace llcpp::detail::terminators
             static constexpr std::size_t argument_size = 0;
             using argument_type = ArgumentType;
             static constexpr bool is_fixed_size = true;
+
+            template <typename Logger, typename Arg>
+            inline static void apply(Logger& logger, const Arg arg) {}
+            template <typename Logger>
+            inline static void apply_variable(Logger& logger, const char *arg) {}
         };
 
         using empty_parser = argument_parser<typename std::tuple<>, 0, 0>;
     };
 
-    struct void_terminator : public terminator<char, 0, void>
+    struct void_terminator : public terminator<char, 0>
     {
     };
 
-    struct pct_terminator : public terminator<char, '%', void>
+    struct pct_terminator : public terminator<char, '%'>
     {
         template <typename FormatTuple, std::size_t EscapeIdx, std::size_t TerminatorIdx>
-        struct argument_parser : public terminator<char, '%', void>::argument_parser<FormatTuple, EscapeIdx, TerminatorIdx>
+        struct argument_parser : public terminator<char, '%'>::argument_parser<FormatTuple, EscapeIdx, TerminatorIdx>
         {
             static_assert(EscapeIdx == TerminatorIdx - 1, "Invalid %% escape. Either the format is wrong "
                                                         "or you are using a terminator we don't support");
@@ -48,7 +53,7 @@ namespace llcpp::detail::terminators
         static constexpr std::size_t count = 0;
     };
 
-    struct d : public terminator<char, 'd', int>
+    struct d : public terminator<char, 'd'>
     {
         template <typename FormatTuple, std::size_t EscapeIdx, std::size_t TerminatorIdx>
         struct argument_parser
@@ -80,7 +85,7 @@ namespace llcpp::detail::terminators
             inline static void apply_variable(Logger& logger, const char *arg) {}
         };
     };
-    struct u : public terminator<char, 'u', int>
+    struct u : public terminator<char, 'u'>
     {
         template <typename FormatTuple, std::size_t EscapeIdx, std::size_t TerminatorIdx>
         struct argument_parser : public d::argument_parser<FormatTuple, EscapeIdx, TerminatorIdx>
@@ -90,7 +95,7 @@ namespace llcpp::detail::terminators
         };
         
     };
-    struct x : public terminator<char, 'x', int>
+    struct x : public terminator<char, 'x'>
     {
         template <typename FormatTuple, std::size_t EscapeIdx, std::size_t TerminatorIdx>
         using argument_parser = d::argument_parser<FormatTuple, EscapeIdx, TerminatorIdx>;
@@ -122,7 +127,7 @@ namespace llcpp::detail::terminators
         static constexpr std::size_t value = 0;
     };
 
-    struct s : public terminator<char, 's', char *>
+    struct s : public terminator<char, 's'>
     {
         using variable_string_length_type = std::uint32_t;
 

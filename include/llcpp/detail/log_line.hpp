@@ -74,7 +74,7 @@ namespace llcpp::detail::log_line {
         inline void apply_arg_variable(Logger& logger, const char * arg) {
             using argument_parser = typename std::tuple_element_t<Idx, argument_tuple>;
 
-            if constexpr(num_variable_args::value > 0) {
+            if constexpr(!argument_parser::is_fixed_size) {
                 argument_parser::apply_variable(logger, arg);
             }
         };
