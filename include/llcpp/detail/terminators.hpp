@@ -1,4 +1,6 @@
 #pragma once
+#include <cstring>
+#include <algorithm>
 
 #include "utils.hpp"
 
@@ -148,7 +150,7 @@ namespace llcpp::detail::terminators
                 if
                     constexpr(is_fixed_size)
                     {
-                        auto len = strlen(arg);
+                        auto len = std::strlen(arg);
                         if (len < argument_size)
                         {
                             logger.write((std::uint8_t *)arg, len);

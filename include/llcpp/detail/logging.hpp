@@ -2,6 +2,8 @@
 
 #include <string>
 #include <functional>
+#include <vector>
+#include <memory>
 
 #include "log_line.hpp"
 #include "config.hpp"
@@ -66,7 +68,7 @@ namespace llcpp::detail::logging {
 
         template<typename LogLine, typename... Args>
         void log(typename level::level_enum level, LogLine&& line, Args&&... args) {
-            static_assert(std::is_base_of_v<log_line::log_line_base, LogLine>, "LogLine type error, did you mean to use \"\"_log?");            
+            static_assert(std::is_base_of_v<log_line::log_line_base, LogLine>, "LogLine type error, did you mean to use _log?");            
             apply_prefix_tuples(level, std::make_index_sequence<std::tuple_size_v<PrefixTuple>>{});
             using log_line_t = typename LogLine::template log_line_with_config<config_t>::template log_line_with_suffix<'\n'>;
             log_line_t _line;
