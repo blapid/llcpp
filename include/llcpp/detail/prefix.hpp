@@ -37,7 +37,7 @@ namespace llcpp::detail::prefix {
             "[%d-%3s-%d %d:%d:%d]: "_log(logger, lt.tm_year + 1900, m_month_strings[lt.tm_mon], lt.tm_mday, lt.tm_hour, lt.tm_min, lt.tm_sec);
         }
 
-        inline static constexpr std::array<const char *, 12> m_month_strings = {
+        static constexpr std::array<const char *, 12> m_month_strings = {
             "Jan", "Feb", "Mar", "Apr", "May", "Jun",
             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
         };
@@ -57,7 +57,7 @@ namespace llcpp::detail::prefix {
             "[%8s]"_log(logger, m_level_strings[level]);
         }
 
-        inline static constexpr std::array<const char *, 6> m_level_strings = {
+        static constexpr std::array<const char *, 6> m_level_strings = {
             "TRACE",
             "DEBUG",
             "INFO",
