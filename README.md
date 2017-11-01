@@ -84,10 +84,10 @@ int main(int argc, char* argv[])
     using conf_t = llcpp::default_config;
     using prefix_tuple_t = std::tuple<llcpp::log_level_prefix, llcpp::localtime_prefix;
     using logger_t = llcpp::file_logger<prefix_tuple_t, conf_t>;
-    auto logger = logger_t("./log.txt", {});
+    auto logger = logger_t("./log.txt");
+    // Or: auto logger = llcpp::default_logger("./log.txt");
 
     logger.info("llcpp message #%d : This is some text for your pleasure. %s"_log, 0, "/dev/null");
-    logger.info("llcpp message #%d : This is some text for your pleasure. %d %p"_log, 1, 42, 50);
     logger.info("llcpp message #%d : This is some text for your pleasure. %d %s %ld %llx. end."_log, 2, 42, "asdf", 24, 50);
     return 0;
 }
