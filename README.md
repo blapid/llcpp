@@ -82,7 +82,7 @@ See my blog post for some discussion over worst-case measurements.
 int main(int argc, char* argv[])
 {
     using conf_t = llcpp::default_config;
-    using prefix_tuple_t = std::tuple<llcpp::log_level_prefix, llcpp::localtime_prefix;
+    using prefix_tuple_t = std::tuple<llcpp::log_level_prefix, llcpp::localtime_prefix>;
     using logger_t = llcpp::file_logger<prefix_tuple_t, conf_t>;
     auto logger = logger_t("./log.txt");
     // Or: auto logger = llcpp::default_logger("./log.txt");
