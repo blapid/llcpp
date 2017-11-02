@@ -232,4 +232,4 @@ using logger_t = llcpp::file_logger<prefix_tuple_t, conf_t>;
 
 ## Blog post
 
-For more information and background, head over to my blog posts [here]()!
+For more information and background, head over to my blog posts [here](https://blapid.github.io/cpp/2017/10/31/llcpp-a-quest-for-faster-logging-intro.html)!
