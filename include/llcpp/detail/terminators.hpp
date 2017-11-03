@@ -80,7 +80,8 @@ namespace llcpp::detail::terminators
                 static_assert(argument_size >= sizeof(Arg),
                             "Discrepency detected between parsed argument_size and size of given arg, "
                             "you may need a specialized argument_parser");
-                logger.write((std::uint8_t *)&arg, argument_size);
+                argument_type tmp = static_cast<argument_type>(arg);
+                logger.write((std::uint8_t *)&tmp, sizeof(argument_type));
             }
 
             template <typename Logger>
