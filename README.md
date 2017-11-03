@@ -50,6 +50,8 @@ Make sure you read [my post]() on benchmarking logging frameworks to get the who
 
 The following benchmark were run on Ubuntu 16.04.03. Compiled with Clang 5.0.1 with `--std=c++1z -flto -O3` flags. `/tmp` is mounted on an SSD. llcpp is presented with both timestamp prefix and date/time prefix (which is slower due to `localtime()`).
 
+(time in **nanoseconds** unless stated otherwise)
+
 ### 1 Thread Logging To `/tmp`
 
 |Logger|     50th|     75th|     90th|     99th|   99.9th|    Worst|  Average |       Total Time (seconds)|
